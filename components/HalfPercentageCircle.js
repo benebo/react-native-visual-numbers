@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View } from 'react-native';
+import { Animated, View } from 'react-native';
 
 class HalfPercentageCircle extends Component {
   propTypes: {
@@ -27,6 +27,7 @@ class HalfPercentageCircle extends Component {
     const secondaryColor = this.props.secondaryColor || 'gray';
     const backgroundColor = this.props.backgroundColor || 'white';
 
+    let loadingTransformDegree = new Animated.Value(0);
     this.state = {
       percent: percentValue,
       transformerDegree,
@@ -35,13 +36,25 @@ class HalfPercentageCircle extends Component {
       color,
       secondaryColor,
       backgroundColor,
+      loadingTransformDegree
     };
+  }
+
+  componentDidMount() {
+    Animated.timing(
+      this.state.loadingTransformDegree,
+      {
+        toValue: this.state.transformerDegree,
+        duration: 1500
+      }
+    ).start();
   }
 
   render() {
     const {
       percent,
       transformerDegree,
+      loadingTransformDegree,
       borderWidth,
       rightCircleBorderWidth,
       color,
@@ -49,6 +62,11 @@ class HalfPercentageCircle extends Component {
       backgroundColor,
     } = this.state;
     const { radius } = this.props;
+
+    const rotate = loadingTransformDegree.interpolate({
+      inputRange: [0, 180],
+      outputRange: ['0.0rad', `${Math.PI}rad`]
+    });
     return (
       <View
         style={[{
@@ -112,20 +130,28 @@ class HalfPercentageCircle extends Component {
          {/** the main percantage circle: composed by a half circle on the left of the container
            *  that is then transformed.
            */}
-         <View
-           style={{
-             borderBottomLeftRadius: radius,
-             borderTopLeftRadius: radius,
-             height: radius * 2,
-             width: radius,
-             position: 'absolute',
-             backgroundColor: color,
-            }}
-           transform={[
-             { translateX: radius / 2 },
-             { rotate: `${transformerDegree} deg` },
-             { translateX: -radius / 2 },
+         <Animated.View
+           style={[
+               {
+               borderBottomRightRadius: radius,
+               borderBottomLeftRadius: radius,
+               width: radius * 2,
+               height: radius,
+               position: 'absolute',
+               backgroundColor: color,
+               top: radius
+             },
+             {
+               transform: [
+                 { translateY: -radius / 2.0 },
+                 { rotate },
+                 { translateY: radius / 2.0 },
+               ]
+             }
+
            ]}
+
+
          />
          {/** the inner circle whose color is determined by the backgroundColor prop
            *  it is used to cover minor differences between the actual and
@@ -159,7 +185,7 @@ const calculatevalidPercentValue = (percent) => {
 };
 
 const calculateTransformerDegree = (percent) => {
-  return percent < 50 ? -(50 - percent) * 1.8 : (percent - 50) * 1.8;
+  return percent * 1.8;
 };
 
 export { HalfPercentageCircle };
